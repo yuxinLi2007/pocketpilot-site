@@ -11,7 +11,8 @@
    Design tokens — 取自设计稿
    ============================================================ */
 :root{
-  --bg:#F9F9F9;
+  /* 全站底色：与 hero 舞台底色 #D2CC9C 同族的暖沙色，让整页背景连成一片 */
+  --bg:#E9E4CB;
   --surface:#FFFFFF;
 
   --primary:#014DB2;
@@ -21,7 +22,7 @@
 
   --ink:#1A1A2E;
   --ink-soft:#3A3A55;
-  --ink-muted:#6B6B8A;
+  --ink-muted:#5E5E7A;
   --ink-faint:#4A4A6A;
 
   --border:#EBEEF5;
@@ -124,13 +125,10 @@ html{scrollbar-color:var(--sand) var(--oat-deep);scrollbar-width:thin;}
    Layout primitives — 全站统一的一种节奏
    ============================================================ */
 .section{padding:var(--sec-y) var(--pad-x);}
-.section--white{background:var(--surface);}
+/* 整页统一底色：所有 section 都透出 body 的暖沙底色，不再出现白/灰/米的分段色差 */
+.section--white{background:var(--bg);}
 .section--tint{background:var(--bg);}
-.section--oat{
-  background:
-    radial-gradient(100% 75% at 50% 45%,rgba(255,255,255,.6) 0%,rgba(255,255,255,0) 72%),
-    linear-gradient(180deg,var(--oat) 0%,var(--oat-deep) 100%);
-}
+.section--oat{background:var(--bg);}
 
 .section-head{
   display:flex;
@@ -236,8 +234,10 @@ html{scrollbar-color:var(--sand) var(--oat-deep);scrollbar-width:thin;}
   transition:background-color .3s ease,box-shadow .25s ease;
 }
 .site-header.is-scrolled,.site-header.is-solid{
-  background:var(--surface);
-  box-shadow:0 6px 24px -12px rgba(1,77,178,.28);
+  background:rgba(250,247,240,.94);
+  -webkit-backdrop-filter:blur(12px) saturate(1.04);
+  backdrop-filter:blur(12px) saturate(1.04);
+  box-shadow:0 6px 24px -12px rgba(1,77,178,.18);
 }
 .header-inner{
   display:flex;
@@ -304,8 +304,8 @@ html{scrollbar-color:var(--sand) var(--oat-deep);scrollbar-width:thin;}
   flex-direction:column;
   gap:4px;
   padding:0 24px 24px;
-  border-top:1px solid var(--border);
-  background:var(--surface);
+  border-top:1px solid var(--oat-line);
+  background:#FAF7F0;
 }
 .mobile-nav a{
   padding:14px 4px;
@@ -317,179 +317,134 @@ html{scrollbar-color:var(--sand) var(--oat-deep);scrollbar-width:thin;}
 .mobile-nav a:last-child{border-bottom:0;}
 
 /* ============================================================ */
-/* Hero：整屏底层视频。
-   视频底色实测为 #D2CC9C，页面底色取同一个值，视频四周的空白边距因此完全溶进页面，
-   看不到画框；四边再做 5% 羽化（落在纯底色区内），彻底消除解码色差造成的接缝。
-   视频内容原始 bbox 为 x41..660 / y147..613，取带余量的裁切框 x30..672 / y134..626
-   （642×492），下面的位移公式把这个框精确对到舞台右侧、垂直居中，且始终不超过原始像素。 */
+/* Hero：整张 KV 作为首屏主视觉。
+   KV 原图 16:9，图内自带标题与产品，所以画面按 contain 放进一个 16:9 的 stage：
+   宽屏正好铺满，16:10 / 4:3 时上下留出的模糊带就是自然画框；任何宽度都不会裁掉
+   图内文字或产品。CTA 与底部演示都以 stage 为坐标系（百分比定位），
+   比例恒定，因此演示动画永远落在产品右侧的空白区，不会压到产品与标题。 */
 .hero{
-  --stage:#D2CC9C;
-  --stage-cream:#FAF7F0;
-  --stage-ink:#2E2A18;
-  --stage-vh:720px;
-  --stage-inset:64px;
   position:relative;overflow:hidden;isolation:isolate;
-  background:var(--stage);
-  min-height:680px;
-  min-height:clamp(680px,100svh,960px);
-  display:flex;flex-direction:column;justify-content:center;
-  padding:calc(var(--header-h) + clamp(44px,7vh,92px)) var(--pad-x) clamp(132px,15vh,168px);
+  background:#D9C9B5;
 }
-.hero-ambient{
-  position:absolute;inset:-14%;z-index:0;pointer-events:none;
-  width:128%;height:128%;max-width:none;object-fit:cover;
-  filter:blur(90px) saturate(1.18);
-  opacity:.26;
-  will-change:transform;
-  animation:heroDrift 26s ease-in-out infinite alternate;
+.hero-frame{
+  position:relative;z-index:1;
+  width:100%;
+  aspect-ratio:16 / 9;
+  max-height:100svh;
+  overflow:hidden;
+  isolation:isolate;
 }
-@keyframes heroDrift{
-  from{transform:scale(1.02) translate3d(-1.2%,0.8%,0);}
-  to{transform:scale(1.1) translate3d(1.6%,-1.4%,0);}
+.hero-media{position:absolute;inset:0;z-index:0;}
+.hero-media picture{display:block;width:100%;height:100%;}
+.hero-media img{width:100%;height:100%;object-fit:cover;}
+.hero-scrim{
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(58% 44% at 0% 100%,rgba(28,32,14,.44) 0%,rgba(28,32,14,0) 74%);
 }
-.hero-stage{
-  position:absolute;inset:0;z-index:1;overflow:hidden;
-  transform:translate3d(0,var(--hero-py,0px),0);
+/* 桌面端：图内已有标题，HTML 标题只留给读屏与搜索引擎 */
+.hero-kicker,.hero-title,.hero-lede{
+  position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
 }
-.hero-layer{
-  position:absolute;top:50%;right:var(--stage-inset);
-  height:var(--stage-vh);max-height:calc(100% - 72px);width:auto;max-width:none;
-  display:block;
-  transform:translate(calc(100% * 48 / 720),calc(-50% - 100% * 20 / 720));
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 5%,#000 95%,transparent 100%),linear-gradient(180deg,transparent 0,#000 5%,#000 95%,transparent 100%);
-  mask-image:linear-gradient(90deg,transparent 0,#000 5%,#000 95%,transparent 100%),linear-gradient(180deg,transparent 0,#000 5%,#000 95%,transparent 100%);
-  -webkit-mask-composite:source-in;
-  mask-composite:intersect;
+.hero-copy{
+  position:absolute;z-index:3;
+  left:9.8%;bottom:5%;
+  max-width:46%;
+  color:#FAF7F0;
 }
-video.hero-layer{object-fit:fill;}
-.hero-wash{
-  position:absolute;inset:0;z-index:2;pointer-events:none;
-  background:
-    radial-gradient(58% 66% at 76% 42%,rgba(255,250,224,.5) 0%,rgba(255,250,224,0) 72%),
-    radial-gradient(46% 52% at 94% 96%,rgba(1,77,178,.13) 0%,rgba(1,77,178,0) 70%),
-    linear-gradient(96deg,
-      rgba(250,247,240,.97) 0%,
-      rgba(250,247,240,.94) 34%,
-      rgba(248,244,234,.86) 46%,
-      rgba(243,239,224,.58) 58%,
-      rgba(226,220,186,.22) 70%,
-      rgba(210,204,156,0) 82%);
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.hero .btn{padding:14px 28px;font-size:clamp(.875rem,.28vw + .75rem,1.0625rem);}
+.btn--hero{
+  background:#FAF7F0;color:#2E2A18;
+  box-shadow:0 16px 34px -14px rgba(18,22,6,.6);
 }
-.hero-grain{
-  position:absolute;inset:0;z-index:3;pointer-events:none;
-  opacity:.055;mix-blend-mode:multiply;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-.hero-dissolve{
-  position:absolute;left:0;right:0;bottom:0;height:172px;z-index:4;pointer-events:none;
-  background:linear-gradient(180deg,rgba(246,242,233,0) 0%,rgba(246,242,233,.5) 52%,rgba(246,242,233,.92) 84%,var(--oat) 100%);
-}
-.hero-copy{position:relative;z-index:5;max-width:560px;}
-.hero-kicker{
-  display:inline-flex;align-items:center;gap:10px;
-  margin:0 0 20px;font-size:.875rem;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--moss-ink);font-family:var(--font-num);
-  font-weight:600;
-}
-.hero-kicker::before{
-  content:'';width:8px;height:8px;border-radius:50%;flex:0 0 8px;
-  background:var(--moss);box-shadow:0 0 0 4px rgba(90,107,69,.18);
-  animation:heroPulse 2.8s ease-in-out infinite;
-}
-@keyframes heroPulse{
-  0%,100%{box-shadow:0 0 0 4px rgba(90,107,69,.18);}
-  50%{box-shadow:0 0 0 8px rgba(90,107,69,.06);}
-}
-.hero-title{
-  margin:0;font-size:clamp(2.35rem,3.9vw,3.6rem);line-height:1.18;
-  font-weight:700;letter-spacing:-1.4px;color:var(--ink);
-}
-.hero-title-em{position:relative;display:inline-block;}
-.hero-title-underline{
-  position:absolute;left:0;right:-2%;bottom:-.16em;
-  width:102%;height:.26em;overflow:visible;color:var(--primary);
-}
-.hero-title-underline path{
-  fill:none;stroke:currentColor;stroke-width:7;stroke-linecap:round;
-  stroke-dasharray:520;stroke-dashoffset:520;
-  animation:heroDraw 1.1s cubic-bezier(.22,.61,.36,1) .75s forwards;
-}
-@keyframes heroDraw{to{stroke-dashoffset:0;}}
-.hero-lede{margin:26px 0 0;font-size:1.0625rem;line-height:1.8;color:var(--ink-soft);max-width:33em;}
-.hero-lede b{color:var(--ink);font-weight:600;}
-.hero-actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:30px;}
-.hero-actions .btn{padding:16px 32px;font-size:1.0625rem;}
-.hero-actions .btn--ghost{
-  background:rgba(255,255,255,.62);
-  border:1.5px solid rgba(46,42,24,.28);
-  color:var(--stage-ink);
+.btn--hero:hover{transform:translateY(-2px);background:#fff;}
+.btn--hero-ghost{
+  background:rgba(250,247,240,.1);
+  color:#FAF7F0;
+  border:1.4px solid rgba(250,247,240,.55);
+  -webkit-backdrop-filter:blur(6px);
   backdrop-filter:blur(6px);
 }
-.hero-actions .btn--ghost:hover{background:#fff;border-color:var(--primary);color:var(--primary);}
-.hero-assure{
-  display:flex;flex-wrap:wrap;gap:8px 24px;
-  margin:28px 0 0;padding:18px 0 0;list-style:none;
-  border-top:1px solid rgba(46,42,24,.16);
+.btn--hero-ghost:hover{transform:translateY(-2px);background:rgba(250,247,240,.22);color:#fff;}
+.hero-note{
+  margin:14px 0 0;
+  font-size:clamp(.75rem,.16vw + .66rem,.8125rem);
+  line-height:1.6;color:rgba(250,247,240,.82);
+  text-shadow:0 1px 2px rgba(20,26,8,.28);
 }
-.hero-assure li{
-  position:relative;padding-left:16px;
-  font-size:.875rem;line-height:1.6;color:var(--ink-faint);white-space:nowrap;
-}
-.hero-assure li::before{
-  content:'';position:absolute;left:0;top:.55em;
-  width:5px;height:5px;border-radius:50%;background:var(--moss);
-}
-.hero-foot{
-  position:absolute;z-index:5;left:var(--pad-x);right:var(--pad-x);
-  bottom:clamp(26px,4vh,42px);
-  display:flex;align-items:center;justify-content:space-between;gap:20px;
-  padding-top:16px;border-top:1px solid rgba(46,42,24,.16);
-}
-.hero-spec{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;}
-.hero-spec span{
-  font-family:var(--font-num);font-size:.875rem;font-weight:600;
-  letter-spacing:.04em;color:var(--stage-ink);
-}
-.hero-spec i{
-  font-style:normal;font-size:.875rem;color:var(--ink-muted);
-  font-family:var(--font-cn);font-weight:400;margin-left:6px;
+.hero-spec{
+  margin:4px 0 0;
+  font-family:var(--font-num);
+  font-size:clamp(.6875rem,.14vw + .6rem,.75rem);
+  letter-spacing:.05em;color:rgba(250,247,240,.6);
 }
 .hero-cue{
-  display:inline-flex;align-items:center;gap:8px;
-  font-size:.875rem;color:var(--ink-faint);
+  position:absolute;z-index:3;left:50%;bottom:2.6%;
+  transform:translateX(-50%);
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 14px 7px 13px;border-radius:var(--radius-pill);
+  background:rgba(250,247,240,.72);
+  border:1px solid rgba(255,255,255,.5);
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+  font-size:.75rem;letter-spacing:.02em;color:#3E3A28;
+  box-shadow:0 10px 24px -14px rgba(32,26,10,.4);
+  white-space:nowrap;
 }
-.hero-cue svg{width:14px;height:18px;color:var(--moss);animation:heroCue 2.2s ease-in-out infinite;}
+.hero-cue svg{width:12px;height:15px;color:var(--moss-ink);animation:heroCue 2.2s ease-in-out infinite;}
 @keyframes heroCue{0%,100%{transform:translateY(0);}50%{transform:translateY(4px);}}
-.hero-media-ctrl{display:inline-flex;align-items:center;gap:12px;flex:0 0 auto;}
-.hero-toggle{
+/* 底部演示：抠掉底色的轮旋动效，落在石台右侧的空白区 */
+.hero-demo{
+  position:absolute;z-index:3;
+  right:2%;bottom:3%;
+  width:min(21%,340px);
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+}
+.hero-demo-media{position:relative;width:100%;aspect-ratio:1 / 1;}
+.hero-demo video,.hero-demo-still{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:contain;
+}
+.hero-demo video{
+  filter:drop-shadow(0 24px 30px rgba(32,26,10,.28));
+}
+.hero-demo-still{
+  filter:drop-shadow(0 24px 30px rgba(32,26,10,.28));
+  transition:opacity .45s ease;
+}
+.hero-demo.is-playing .hero-demo-still{opacity:0;}
+.hero-demo-cap{
   display:inline-flex;align-items:center;gap:8px;
-  padding:9px 16px 9px 13px;border-radius:var(--radius-pill);
-  background:rgba(255,255,255,.7);border:1.5px solid rgba(46,42,24,.24);
-  font-size:.875rem;font-weight:600;color:var(--stage-ink);
-  backdrop-filter:blur(6px);
-  transition:background-color .2s ease,border-color .2s ease,color .2s ease;
+  padding:4px 5px 4px 12px;border-radius:var(--radius-pill);
+  background:rgba(250,247,240,.74);
+  border:1px solid rgba(255,255,255,.55);
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+  font-size:.6875rem;letter-spacing:.03em;color:#3E3A28;
+  box-shadow:0 10px 24px -12px rgba(32,26,10,.4);
+  white-space:nowrap;
 }
-.hero-toggle:hover{background:#fff;border-color:var(--primary);color:var(--primary);}
-.hero-toggle svg{width:14px;height:14px;flex:0 0 14px;}
-.hero-toggle .ico-play{display:none;}
-.hero-toggle[aria-pressed="true"] .ico-play{display:block;}
-.hero-toggle[aria-pressed="true"] .ico-pause{display:none;}
-.hero-tag{
-  font-family:var(--font-num);font-size:.875rem;letter-spacing:.08em;
-  color:var(--ink-muted);white-space:nowrap;
+.hero-demo-toggle{
+  width:22px;height:22px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(46,42,24,.08);
+  transition:background-color .2s ease;
 }
-/* 入场：文案分级浮现 */
-.hero-in{animation:heroIn .85s cubic-bezier(.22,.61,.36,1) both;animation-delay:var(--d,0s);}
-@keyframes heroIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:none;}}
-/* 系统开启「减少动态效果」时，用静态首帧代替视频，不做自动播放 */
+.hero-demo-toggle:hover{background:rgba(46,42,24,.16);}
+.hero-demo-toggle svg{width:9px;height:9px;color:#3E3A28;}
+.hero-demo-toggle .ico-play{display:none;}
+.hero-demo-toggle[aria-pressed="true"] .ico-play{display:block;}
+.hero-demo-toggle[aria-pressed="true"] .ico-pause{display:none;}
+/* 横屏手机 / 超矮窗口：高度只够放 CTA，次要说明先收起，避免压到图中文案 */
+@media (max-height:520px) and (min-width:641px){
+  .hero-note,.hero-spec{display:none;}
+}
+/* 系统开启「减少动态效果」时只保留抠像静帧 */
 @media (prefers-reduced-motion: reduce){
-  .hero-stage video{display:none;}
-  .hero-ambient{animation:none;transform:none;}
-  .hero-media-ctrl{display:none;}
-  .hero-in{animation:none;opacity:1;transform:none;}
-  .hero-title-underline path{stroke-dashoffset:0;animation:none;}
-  .hero-kicker::before,.hero-cue svg{animation:none;}
-  .hero-stage{transform:none;}
+  .hero-demo video{display:none;}
+  .hero-demo-cap{display:none;}
+  .hero-cue svg{animation:none;}
 }
 /* 仅给读屏与搜索引擎的文本 */
 .sr-only{
@@ -507,7 +462,7 @@ video.hero-layer{object-fit:fill;}
   gap:64px;
   align-items:center;
   padding:var(--sec-y) var(--pad-x);
-  background:var(--surface);
+  background:var(--bg);
 }
 .pain-copy{display:flex;flex-direction:column;align-items:flex-start;gap:24px;}
 .pain-title{max-width:560px;}
@@ -524,7 +479,7 @@ video.hero-layer{object-fit:fill;}
   gap:18px;
   padding:20px 24px;
   border-radius:var(--radius-tile);
-  background:var(--oat);
+  background:var(--surface);
   border:1px solid var(--oat-line);
   font-size:1rem;
   line-height:1.7;
@@ -592,7 +547,7 @@ video.hero-layer{object-fit:fill;}
   display:flex;
   flex-direction:column;
   border-radius:var(--radius-card);
-  background:var(--oat);
+  background:var(--surface);
   border:1px solid var(--oat-line);
   overflow:hidden;
   transition:transform .22s ease,box-shadow .22s ease,background-color .22s ease;
@@ -827,7 +782,7 @@ video.hero-layer{object-fit:fill;}
   gap:16px;
   padding:var(--card-pad);
   border-radius:var(--radius-card);
-  background:var(--oat);
+  background:var(--surface);
   border:1px solid var(--oat-line);
   transition:transform .22s ease,box-shadow .22s ease,background-color .22s ease;
 }
@@ -864,7 +819,7 @@ video.hero-layer{object-fit:fill;}
   padding:var(--panel-pad);
   border-radius:var(--radius-lg);
   background:var(--surface);
-  border:1px solid var(--border);
+  border:1px solid var(--oat-line);
   box-shadow:var(--shadow-panel);
 }
 .story-visual{
@@ -958,7 +913,7 @@ video.hero-layer{object-fit:fill;}
 .detail{
   border-radius:var(--radius-tile);
   overflow:hidden;
-  background:var(--oat);
+  background:var(--surface);
   border:1px solid var(--oat-line);
   transition:transform .22s ease,box-shadow .22s ease;
 }
@@ -1088,7 +1043,7 @@ video.hero-layer{object-fit:fill;}
   gap:16px;
   padding:var(--card-pad);
   border-radius:var(--radius-card);
-  background:var(--oat);
+  background:var(--surface);
   border:1px solid var(--oat-line);
   transition:transform .22s ease,box-shadow .22s ease;
 }
@@ -1180,7 +1135,7 @@ video.hero-layer{object-fit:fill;}
    ============================================================ */
 .faq-list{display:flex;flex-direction:column;gap:14px;}
 .faq-item{
-  background:var(--oat);
+  background:var(--surface);
   border:1px solid var(--oat-line);
   border-radius:var(--radius-tile);
   overflow:hidden;
@@ -1372,11 +1327,9 @@ body.is-locked{overflow:hidden;}
 /* 超宽屏：内容保持 1200px 稿宽，两侧留白自动加大 */
 @media (min-width:1441px){
   :root{--pad-x:calc((100vw - var(--maxw)) / 2);}
-  .hero{--stage-inset:calc(var(--pad-x) - 20px);}
 }
 @media (max-width:1399px){
-  .hero{--stage-vh:600px;--stage-inset:40px;}
-  .hero-copy{max-width:520px;}
+  .hero-copy{max-width:50%;}
 }
 @media (max-width:1320px){
   :root{--pad-x:72px;--sec-y:92px;}
@@ -1389,28 +1342,9 @@ body.is-locked{overflow:hidden;}
 }
 @media (max-width:1160px){
   :root{--pad-x:48px;--card-pad:28px;--panel-pad:36px;}
-  /* 窄屏改为上下叠放：舞台按裁切框原比例开槽，最大 642px，绝不放大视频 */
-  .hero{
-    min-height:0;justify-content:flex-start;
-    padding:calc(var(--header-h) + 40px) var(--pad-x) clamp(48px,7vh,76px);
-  }
-  .hero-stage{
-    position:relative;inset:auto;order:2;transform:none;
-    width:100%;max-width:642px;margin:32px auto 0;aspect-ratio:642 / 492;
-  }
-  .hero-layer{
-    top:0;left:0;right:auto;height:auto;max-height:none;
-    width:calc(100% * 720 / 642);
-    transform:translate(calc(-100% * 30 / 720),calc(-100% * 134 / 720));
-  }
-  .hero-copy{order:1;max-width:640px;}
-  .hero-foot{position:relative;left:auto;right:auto;bottom:auto;order:3;margin-top:30px;}
-  .hero-wash{
-    background:
-      radial-gradient(70% 40% at 50% 74%,rgba(255,250,224,.45) 0%,rgba(255,250,224,0) 72%),
-      linear-gradient(180deg,rgba(250,247,240,.96) 0%,rgba(250,247,240,.92) 24%,rgba(248,244,234,.55) 34%,rgba(210,204,156,0) 44%);
-  }
+  .hero-copy{max-width:52%;}
   .hero-cue{display:none;}
+  .hero .btn{padding:12px 22px;}
   .cards--scenes{gap:20px;}
   .pain{grid-template-columns:minmax(0,1fr) 330px;gap:40px;}
   .family-card{grid-template-columns:1fr;gap:32px;}
@@ -1440,6 +1374,56 @@ body.is-locked{overflow:hidden;}
   .footer-brand{grid-column:1 / -1;max-width:none;}
   .lab-head{flex-direction:column;align-items:flex-start;gap:18px;}
 }
+/* 手机 / 竖屏：整张 KV 在窄屏里图内文字会小到不可读，且裁切时容易露出半截图内文案。
+   改为「无文案的产品裁切带 + 可访问的 HTML 文案」上下叠放；
+   横屏和桌面仍用 16:9 stage，烘焙文案按比例缩小但完整。 */
+@media (max-width:640px),(max-width:900px) and (max-aspect-ratio:1/1){
+  .hero{display:block;min-height:0;background:var(--bg);}
+  .hero-frame{width:100%;aspect-ratio:auto;max-height:none;overflow:visible;}
+  .hero-media{position:relative;inset:auto;height:min(54svh,440px);min-height:300px;overflow:hidden;}
+  .hero-media img{object-position:50% 45%;}
+  .hero-scrim{
+    background:linear-gradient(180deg,rgba(233,228,203,0) 62%,rgba(233,228,203,.55) 86%,var(--bg) 100%);
+  }
+  .hero-kicker,.hero-title,.hero-lede{
+    position:static;width:auto;height:auto;margin:0;padding:0;
+    overflow:visible;clip:auto;white-space:normal;border:0;
+  }
+  .hero-copy{
+    position:relative;left:auto;bottom:auto;z-index:2;
+    max-width:none;color:var(--ink);
+    padding:clamp(20px,5vw,32px) var(--pad-x) clamp(36px,7vw,52px);
+  }
+  .hero-kicker{
+    display:inline-flex;align-items:center;gap:9px;
+    margin-bottom:14px;font-size:.75rem;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--moss-ink);
+    font-family:var(--font-num);font-weight:600;
+  }
+  .hero-kicker::before{
+    content:'';width:7px;height:7px;border-radius:50%;flex:0 0 7px;
+    background:var(--moss);box-shadow:0 0 0 4px rgba(90,107,69,.18);
+  }
+  .hero-title{
+    font-size:clamp(1.9rem,7.4vw,2.6rem);line-height:1.22;
+    font-weight:700;letter-spacing:-.8px;color:var(--ink);
+  }
+  .hero-lede{margin-top:16px;font-size:1rem;line-height:1.75;color:var(--ink-soft);}
+  .hero-lede b{color:var(--ink);font-weight:600;}
+  .hero-actions{width:100%;gap:10px;margin-top:24px;}
+  .hero-actions .btn{flex:1 1 auto;padding:15px 18px;font-size:1rem;}
+  .hero .btn--hero{background:var(--primary);color:#fff;box-shadow:var(--shadow-cta);}
+  .hero .btn--hero:hover{background:var(--deep);color:#fff;}
+  .hero .btn--hero-ghost{background:rgba(255,255,255,.7);color:var(--ink);border:1px solid var(--border-mid);-webkit-backdrop-filter:none;backdrop-filter:none;}
+  .hero .btn--hero-ghost:hover{background:#fff;color:var(--primary);border-color:var(--primary);}
+  .hero-note{margin-top:18px;font-size:.875rem;color:var(--ink-faint);text-shadow:none;}
+  .hero-spec{margin-top:6px;font-size:.75rem;color:var(--ink-muted);}
+  .hero-cue,.hero-demo{display:none;}
+}
+/* 641–900 的竖屏平板：更宽的裁切带才不会把产品/石台裁掉 */
+@media (min-width:641px) and (max-width:900px) and (max-aspect-ratio:1/1){
+  .hero .hero-media{height:min(64svh,560px);}
+}
 @media (max-width:720px){
   :root{
     --pad-x:20px;--sec-y:64px;--card-pad:24px;--panel-pad:24px;
@@ -1447,17 +1431,10 @@ body.is-locked{overflow:hidden;}
   }
   .header-inner{padding:14px var(--pad-x);gap:16px;}
   .brand-name{font-size:1.3125rem;}
-  .hero{padding:calc(var(--header-h) + 28px) var(--pad-x) clamp(40px,6vh,64px);}
-  .hero-title{letter-spacing:-.6px;}
-  .hero-lede{margin-top:22px;}
-  .hero-actions{width:100%;gap:10px;margin-top:26px;}
-  .hero-actions .btn{flex:1 1 auto;padding:15px 20px;font-size:1rem;}
-  .hero-assure{margin-top:22px;padding-top:14px;gap:8px 18px;}
-  .hero-assure li{font-size:.875rem;white-space:normal;}
-  .hero-stage{margin-top:26px;}
-  .hero-foot{flex-direction:column;align-items:flex-start;gap:12px;bottom:24px;margin-top:26px;}
-  .hero-spec{gap:4px 14px;}
-  .hero-media-ctrl{width:100%;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .hero-media{height:min(56svh,420px);}
+  .hero-lede{margin-top:14px;font-size:.9375rem;}
+  .hero-actions{margin-top:20px;}
+  .hero-note{font-size:.8125rem;}
   .section-head{margin-bottom:36px;gap:14px;}
   .section-lede{font-size:0.9375rem;}
   .kicker{font-size:0.875rem;letter-spacing:1px;gap:10px;}
@@ -1516,8 +1493,6 @@ body.is-locked{overflow:hidden;}
   .cards--scenes{grid-template-columns:1fr;}
 }
 @media (max-width:540px){
-  .hero-spec i{display:none;}
-  .hero-tag{white-space:normal;}
   /* 窄屏放不下整台手机时，只保留屏幕内容区，界面文字回到可读尺寸 */
   .family-card{padding:22px 12px;margin-inline:-8px;}
   .app-shot-wrap{margin-inline:-12px;width:calc(100% + 24px);}
@@ -1564,51 +1539,49 @@ body.is-locked{overflow:hidden;}
 <main data-page-node-id="KDX9lrefHwDE6A9IBYq0PK">
 
 <!-- ================= Hero ================= -->
-<section class="hero" data-page-node-id="oc0bjfkAVV0uo0ZMqMkwlM">
-  <img class="hero-ambient" src="assets/images/hero-carousel-poster.png" alt="" aria-hidden="true" decoding="async">
-  <div class="hero-stage" aria-hidden="true">
-    <img class="hero-layer" src="assets/images/hero-carousel-poster.png" width="720" height="720" alt="" decoding="async" fetchpriority="high">
-    <video class="hero-layer" id="heroVideo" src="assets/videos/hero-carousel.webm" poster="assets/images/hero-carousel-poster.png" autoplay muted loop playsinline preload="auto" tabindex="-1"></video>
-  </div>
-  <div class="hero-wash" aria-hidden="true"></div>
-  <div class="hero-grain" aria-hidden="true"></div>
-  <div class="hero-dissolve" aria-hidden="true"></div>
-
-  <div class="hero-copy">
-    <p class="hero-kicker hero-in" style="--d:.05s">PocketPilot · 为长辈设计的实体 AI 按键</p>
-    <h1 class="hero-title hero-in" style="--d:.14s">让手机操作，<br><span class="hero-title-em">变得更简单。<svg class="hero-title-underline" viewBox="0 0 300 12" preserveAspectRatio="none" aria-hidden="true"><path d="M3 8.4C58 3.6 132 2.4 297 5.2"/></svg></span></h1>
-    <p class="hero-lede hero-in" style="--d:.24s">一颗实体按键，一句话。<b>拨给女儿、打开回家的路线、发起视频通话</b>，手机自己完成——不用先解锁屏幕，也不用在一堆图标里翻找。</p>
-    <div class="hero-actions hero-in" style="--d:.34s">
-      <a class="btn btn--primary" href="#pilot">为父母预约试点</a>
-      <a class="btn btn--ghost" href="#how">看看它怎么工作</a>
+<section class="hero" aria-labelledby="heroTitle" data-page-node-id="oc0bjfkAVV0uo0ZMqMkwlM">
+  <div class="hero-frame">
+    <div class="hero-media">
+      <picture>
+        <source media="(max-width:640px),(max-width:900px) and (max-aspect-ratio:1/1)" type="image/webp" srcset="assets/images/hero-kv-mobile-610.webp 610w, assets/images/hero-kv-mobile-1219.webp 1219w" sizes="100vw">
+        <source type="image/webp" srcset="assets/images/hero-kv-960.webp 960w, assets/images/hero-kv-1440.webp 1440w, assets/images/hero-kv-2048.webp 2048w" sizes="100vw">
+        <img src="assets/images/hero-kv-1440.jpg" width="2048" height="1152" alt="" decoding="async" fetchpriority="high">
+      </picture>
     </div>
-    <ul class="hero-assure hero-in" style="--d:.44s">
-      <li>拨号、发送前先确认</li>
-      <li>不收集语音录音</li>
-      <li>首版连接安卓手机</li>
-    </ul>
-  </div>
+    <div class="hero-scrim" aria-hidden="true"></div>
 
-  <div class="hero-foot hero-in" style="--d:.56s">
-    <p class="hero-spec">
-      <span>42 × 42 mm<i>掌心大小</i></span>
-      <span>8.5 mm<i>吸在手机背面</i></span>
-      <span>BLE<i>低功耗直连</i></span>
-    </p>
+    <div class="hero-copy">
+      <p class="hero-kicker">PocketPilot · 为长辈设计的实体 AI 按键</p>
+      <h1 class="hero-title" id="heroTitle">让手机操作，<br>变得更简单。</h1>
+      <p class="hero-lede">一颗实体按键，一句话。<b>拨给女儿、打开回家的路线、发起视频通话</b>，手机自己完成——不用先解锁屏幕，也不用在一堆图标里翻找。</p>
+      <div class="hero-actions">
+        <a class="btn btn--hero" href="#pilot">为父母预约试点</a>
+        <a class="btn btn--hero-ghost" href="#how">看看它怎么工作</a>
+      </div>
+      <p class="hero-note">关键操作先确认 · 不收集语音录音 · 首版连接安卓手机</p>
+      <p class="hero-spec">42 × 42 mm · 8.5 mm · BLE 低功耗直连</p>
+    </div>
+
     <a class="hero-cue" href="#spec">
       <svg viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 1v14M2 10.5 7 16l5-5.5"/></svg>
       向下看硬件细节
     </a>
-    <div class="hero-media-ctrl">
-      <button class="hero-toggle" type="button" id="heroToggle" aria-pressed="false" aria-controls="heroVideo">
-        <svg class="ico-pause" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="2.5" y="1.5" width="3.4" height="11" rx="1.2"/><rect x="8.1" y="1.5" width="3.4" height="11" rx="1.2"/></svg>
-        <svg class="ico-play" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M3 1.8 12 7l-9 5.2z"/></svg>
-        <span id="heroToggleText">暂停动效</span>
-      </button>
-      <span class="hero-tag">产品与场景动效 · 13s 循环</span>
-    </div>
+
+    <figure class="hero-demo" id="heroDemo">
+      <div class="hero-demo-media">
+        <img class="hero-demo-still" src="assets/images/hero-wheel-poster.webp" width="720" height="720" alt="" loading="lazy" decoding="async">
+        <video id="heroWheel" src="assets/videos/hero-wheel-alpha.webm" muted loop playsinline preload="none" tabindex="-1" aria-hidden="true"></video>
+      </div>
+      <figcaption class="hero-demo-cap">
+        <span>场景演示 · 20s 循环</span>
+        <button class="hero-demo-toggle" type="button" id="heroToggle" aria-pressed="false" aria-controls="heroWheel" aria-label="暂停场景演示动效">
+          <svg class="ico-pause" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="2.6" y="1.8" width="3.2" height="10.4" rx="1.1"/><rect x="8.2" y="1.8" width="3.2" height="10.4" rx="1.1"/></svg>
+          <svg class="ico-play" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M3.4 2 11.4 7l-8 5z"/></svg>
+        </button>
+      </figcaption>
+    </figure>
+    <p class="sr-only">底部演示：PocketPilot 与拨号、导航、相机、影音四个场景卡片环绕旋转的动效，卡片为透明底，悬浮在画面右下角。</p>
   </div>
-  <p class="sr-only">背景动效：PocketPilot 实体按键与拨号、导航、相机、影音四个使用场景的卡片环绕旋转展示。</p>
 </section>
 
 <!-- ================= Hardware spec ================= -->
@@ -2566,28 +2539,28 @@ body.is-locked{overflow:hidden;}
 
 
 <script>
-/* hero 底层动效：可见即播、离屏即停，另给一个始终可见的播放/暂停开关。
-   手动暂停后不再被自动播放覆盖；系统「减少动态效果」时只留静帧。 */
+/* hero 底部演示：离屏不加载、可见即播、另给一个播放/暂停开关。
+   静帧（透明底 WebP）垫在视频下面，首帧出来前和「减少动态效果」时都只显示静帧。 */
 (function(){
-  var v=document.getElementById('heroVideo');
+  var demo=document.getElementById('heroDemo');
+  var v=document.getElementById('heroWheel');
   var btn=document.getElementById('heroToggle');
-  var txt=document.getElementById('heroToggleText');
-  if(!v||!btn)return;
-  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-    v.removeAttribute('autoplay');v.pause();return;
-  }
+  if(!demo||!v||!btn)return;
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  if(window.matchMedia('(max-width:640px),(max-width:900px) and (max-aspect-ratio:1/1)').matches)return;
   var wantPlay=true,inView=true;
   /* 按钮表达「用户意图」而不是瞬时 paused：离屏/切后台的自动暂停不会污染开关状态 */
   var sync=function(){
     btn.setAttribute('aria-pressed',wantPlay?'false':'true');
-    txt.textContent=wantPlay?'暂停动效':'播放动效';
-    btn.setAttribute('aria-label',wantPlay?'暂停背景产品动效':'播放背景产品动效');
+    btn.setAttribute('aria-label',wantPlay?'暂停场景演示动效':'播放场景演示动效');
   };
   var update=function(){
     if(!wantPlay||!inView||document.visibilityState==='hidden'){v.pause();return;}
     var p=v.play();
-    if(p&&p.catch)p.catch(function(){wantPlay=false;sync();});
+    /* 自动播放被临时拦截时保持「想播」的意图，等可见性或首次交互再试 */
+    if(p&&p.catch)p.catch(function(){});
   };
+  v.addEventListener('playing',function(){demo.classList.add('is-playing');});
   btn.addEventListener('click',function(){
     wantPlay=!wantPlay;
     sync();update();
@@ -2599,7 +2572,7 @@ body.is-locked{overflow:hidden;}
     },{threshold:0.05}).observe(v);
   }
   document.addEventListener('visibilitychange',update);
-  sync();
+  sync();update();
 })();
 </script>
 </body></html>
